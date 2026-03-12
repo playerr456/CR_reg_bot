@@ -5,3 +5,4 @@ node_modules/
 .env.*
 bot_token.env
 ~$*.xlsx
+mephi_users.xlsx
