@@ -34,7 +34,7 @@ module.exports = async function registerHandler(req, res) {
 
   let existsInUsersTable = false;
   try {
-    existsInUsersTable = studentExists(fullName, groupNumber);
+    existsInUsersTable = await studentExists(fullName, groupNumber);
   } catch (error) {
     return sendJson(res, 500, {
       ok: false,

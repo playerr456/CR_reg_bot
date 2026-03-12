@@ -31,6 +31,18 @@ Telegram-бот и Mini App для регистрации на турнир Clas
 - `CR nickname`
 - `timestamp`
 
+## Таблица пользователей (приватно)
+
+Чтобы не хранить `mephi_users.xlsx` в GitHub:
+
+1. Оставьте файл только локально (он уже в `.gitignore`).
+2. Загрузите таблицу в private Blob:
+   - `npx vercel blob put mephi_users.xlsx --access private --pathname secure/mephi_users.xlsx --allow-overwrite true`
+3. При деплое, если локального файла нет, API автоматически читает таблицу из Blob по пути `secure/mephi_users.xlsx`.
+4. Если хотите другой путь, задайте env:
+   - `USERS_XLSX_BLOB_PATH=<ваш/path.xlsx>`
+   - `USERS_XLSX_BLOB_ACCESS=private` (или `public`).
+
 ## Валидации
 
 - ФИО:
