@@ -1,4 +1,5 @@
 const { hasRegistrationFolder, saveRegistrationFile } = require("../lib/blob-store");
+const { CHANNEL_URL } = require("../lib/config");
 const { studentExists } = require("../lib/excel");
 const { methodNotAllowed, parseJsonBody, sendJson } = require("../lib/http");
 const { sendMessage } = require("../lib/telegram");
@@ -93,6 +94,22 @@ module.exports = async function registerHandler(req, res) {
     await sendMessage(
       tgId,
       `Регистрация принята.\nФИО: ${fullName}\nномер группы: ${groupNumber}\nCR тэг: ${crId}\nCR nickname: ${crNickname}\nВремя: ${formattedDate}`
+    );
+    await sendMessage(
+      tgId,
+      "Чтобы завершить регистрацию, необходимо подписаться на канал.",
+      CHANNEL_URL
+        ? {
+          inline_keyboard: [
+            [
+              {
+                text: "Подписаться на канал",
+                url: CHANNEL_URL
+              }
+            ]
+          ]
+        }
+        : undefined
     );
   } catch (_error) {
     // Ignored intentionally, registration is already saved.
