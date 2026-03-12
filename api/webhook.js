@@ -1,7 +1,53 @@
-const { TELEGRAM_WEBHOOK_SECRET, WEBAPP_URL } = require("../lib/config");
-const { hasRegistrationFolder } = require("../lib/blob-store");
+const { CHANNEL_CHAT_ID, CHANNEL_URL, TELEGRAM_WEBHOOK_SECRET, WEBAPP_URL } = require("../lib/config");
+const { getLatestRegistration, hasRegistrationFolder } = require("../lib/blob-store");
 const { methodNotAllowed, parseJsonBody, sendJson } = require("../lib/http");
-const { sendMessage } = require("../lib/telegram");
+const { answerCallbackQuery, getChatMember, sendMessage } = require("../lib/telegram");
+
+function formatDateFromTimestamp(timestamp) {
+  const numericTimestamp = Number(timestamp);
+  if (!Number.isFinite(numericTimestamp) || numericTimestamp <= 0) {
+    return "";
+  }
+  return new Date(numericTimestamp).toISOString().slice(0, 10).replace(/-/g, ".");
+}
+
+function isSubscribedToChannel(chatMember) {
+  if (!chatMember || typeof chatMember.status !== "string") {
+    return false;
+  }
+
+  if (chatMember.status === "left" || chatMember.status === "kicked") {
+    return false;
+  }
+
+  if (chatMember.status === "restricted") {
+    return Boolean(chatMember.is_member);
+  }
+
+  return ["member", "administrator", "creator"].includes(chatMember.status);
+}
+
+function buildSubscribeCheckKeyboard() {
+  const inlineKeyboard = [];
+
+  if (CHANNEL_URL) {
+    inlineKeyboard.push([
+      {
+        text: "Подписаться на канал",
+        url: CHANNEL_URL
+      }
+    ]);
+  }
+
+  inlineKeyboard.push([
+    {
+      text: "Проверить подписку",
+      callback_data: "check_subscription"
+    }
+  ]);
+
+  return { inline_keyboard: inlineKeyboard };
+}
 
 function buildKeyboard(hasExistingRegistration) {
   const inlineKeyboard = [
@@ -51,6 +97,77 @@ async function handleStartCommand(message) {
   await sendMessage(chatId, text, buildKeyboard(hasExistingRegistration));
 }
 
+async function checkSubscriptionState(userId) {
+  if (!CHANNEL_CHAT_ID) {
+    return { subscribed: true, verified: false };
+  }
+
+  try {
+    const member = await getChatMember(CHANNEL_CHAT_ID, userId);
+    return {
+      subscribed: isSubscribedToChannel(member),
+      verified: true
+    };
+  } catch (error) {
+    const text = String(error?.message || "");
+    if (/member list is inaccessible/i.test(text)) {
+      return { subscribed: true, verified: false };
+    }
+
+    return {
+      subscribed: false,
+      verified: false,
+      error: "Не удалось проверить подписку. Попробуйте еще раз."
+    };
+  }
+}
+
+async function handleCheckSubscription(callbackQuery) {
+  const callbackQueryId = callbackQuery?.id;
+  const chatId = callbackQuery?.message?.chat?.id;
+  const userId = callbackQuery?.from?.id;
+
+  if (!callbackQueryId || !chatId || !userId) {
+    return;
+  }
+
+  const subscriptionState = await checkSubscriptionState(userId);
+  if (subscriptionState.error) {
+    await answerCallbackQuery(callbackQueryId, subscriptionState.error);
+    return;
+  }
+
+  if (!subscriptionState.subscribed) {
+    await answerCallbackQuery(callbackQueryId, "Подписка не найдена.");
+    await sendMessage(
+      chatId,
+      "Сначала подпишитесь на канал, затем нажмите «Проверить подписку».",
+      buildSubscribeCheckKeyboard()
+    );
+    return;
+  }
+
+  const registration = await getLatestRegistration(String(userId));
+  if (!registration) {
+    await answerCallbackQuery(callbackQueryId, "Регистрация не найдена.");
+    await sendMessage(chatId, "Регистрация не найдена. Заполните форму снова.");
+    return;
+  }
+
+  const formattedDate = formatDateFromTimestamp(registration.timestamp);
+  const lines = [
+    "Регистрация принята.",
+    `ФИО: ${registration.fullName}`,
+    `номер группы: ${registration.groupNumber}`,
+    `CR тэг: ${registration.crId}`,
+    `CR nickname: ${registration.crNickname}`,
+    `Время: ${formattedDate || registration.timestamp}`
+  ];
+
+  await sendMessage(chatId, lines.join("\n"));
+  await answerCallbackQuery(callbackQueryId, "Готово.");
+}
+
 module.exports = async function webhookHandler(req, res) {
   if (req.method === "GET") {
     return sendJson(res, 200, { ok: true, message: "Webhook is alive." });
@@ -77,6 +194,11 @@ module.exports = async function webhookHandler(req, res) {
   const message = update?.message;
   if (message?.text && message.text.startsWith("/start")) {
     await handleStartCommand(message);
+  }
+
+  const callbackQuery = update?.callback_query;
+  if (callbackQuery?.data === "check_subscription") {
+    await handleCheckSubscription(callbackQuery);
   }
 
   return sendJson(res, 200, { ok: true });

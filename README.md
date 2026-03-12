@@ -16,7 +16,8 @@ Telegram-бот и Mini App для регистрации на турнир Clas
   - проверяет Telegram `initData` подпись;
   - проверяет пользователя в `mephi_users.xlsx` по связке `ФИО + номер группы`;
   - сохраняет регистрацию в Vercel Blob как `registrations/<tg_id>/<timestamp>.txt`;
-  - после сохранения отправляет напоминание о подписке на канал и карточку с данными регистрации;
+  - после сохранения отправляет напоминание о подписке с кнопками `Подписаться на канал` и `Проверить подписку`;
+  - карточка `Регистрация принята...` отправляется после нажатия `Проверить подписку` в боте;
   - при повторной регистрации без режима редактирования возвращает ошибку `needChange=true`.
   - автоматически подбирает `access=public/private` под тип Blob Store (можно зафиксировать через `BLOB_ACCESS`).
 - `/api/registration-status`:
@@ -79,6 +80,7 @@ Telegram-бот и Mini App для регистрации на турнир Clas
    - `BASE_URL` (например, `https://your-app.vercel.app`)
    - `BLOB_READ_WRITE_TOKEN` (из Vercel Blob)
    - `CHANNEL_URL` (опционально, ссылка на канал для кнопки подписки; по умолчанию `https://t.me/esportsMEPHI`)
+   - `CHANNEL_CHAT_ID` (опционально, `@username` или `-100...`; нужен для реальной проверки подписки)
    - `TELEGRAM_WEBHOOK_SECRET` (опционально)
    - `SET_WEBHOOK_KEY` (опционально, защита `/api/set-webhook`)
    - также поддерживаются алиасы: `TELEGRAMM_BOT_TOEN_CR_REG`, `BASE_URL_CR_REG`, `BLOB_READ_WRITE_TOKEN_CR_REG`.

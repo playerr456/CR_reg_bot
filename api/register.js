@@ -7,20 +7,25 @@ const { validateRegistration } = require("../lib/validation");
 const { verifyInitData } = require("../lib/webapp-auth");
 
 function buildChannelSubscribeMarkup() {
-  if (!CHANNEL_URL) {
-    return undefined;
+  const inlineKeyboard = [];
+
+  if (CHANNEL_URL) {
+    inlineKeyboard.push([
+      {
+        text: "Подписаться на канал",
+        url: CHANNEL_URL
+      }
+    ]);
   }
 
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: "Подписаться на канал",
-          url: CHANNEL_URL
-        }
-      ]
-    ]
-  };
+  inlineKeyboard.push([
+    {
+      text: "Проверить подписку",
+      callback_data: "check_subscription"
+    }
+  ]);
+
+  return { inline_keyboard: inlineKeyboard };
 }
 
 module.exports = async function registerHandler(req, res) {
@@ -86,7 +91,6 @@ module.exports = async function registerHandler(req, res) {
   }
 
   const timestampMs = Date.now();
-  const formattedDate = new Date(timestampMs).toISOString().slice(0, 10).replace(/-/g, ".");
   const operation = hasExistingRegistration ? "edit" : "new";
   const content = [
     `tg id: ${tgId}`,
@@ -112,10 +116,6 @@ module.exports = async function registerHandler(req, res) {
       tgId,
       "Регистрация почти завершена, чтобы завершить регистрацию, необходимо подписаться на канал.",
       buildChannelSubscribeMarkup()
-    );
-    await sendMessage(
-      tgId,
-      `Регистрация принята.\nФИО: ${fullName}\nномер группы: ${groupNumber}\nCR тэг: ${crId}\nCR nickname: ${crNickname}\nВремя: ${formattedDate}`
     );
   } catch (_error) {
     // Ignored intentionally, registration is already saved.
