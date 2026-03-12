@@ -91,7 +91,7 @@ module.exports = async function registerHandler(req, res) {
   try {
     await sendMessage(
       tgId,
-      `Регистрация принята.\nФИО: ${fullName}\nГруппа: ${groupNumber}\nВремя: ${timestampMs}`
+      `Регистрация принята.\nФИО: ${fullName}\nномер группы: ${groupNumber}\nCR id: ${crId}\nCR nickname: ${crNickname}\nВремя: ${timestampMs}`
     );
   } catch (_error) {
     // Ignored intentionally, registration is already saved.
