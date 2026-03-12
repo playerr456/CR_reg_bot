@@ -69,7 +69,6 @@ module.exports = async function registerHandler(req, res) {
   }
 
   const timestampMs = Date.now();
-  const formattedDate = new Date(timestampMs).toISOString().slice(0, 10).replace(/-/g, ".");
   const operation = hasExistingRegistration ? "edit" : "new";
   const content = [
     `tg id: ${tgId}`,
@@ -93,23 +92,17 @@ module.exports = async function registerHandler(req, res) {
   try {
     await sendMessage(
       tgId,
-      `Регистрация принята.\nФИО: ${fullName}\nномер группы: ${groupNumber}\nCR тэг: ${crId}\nCR nickname: ${crNickname}\nВремя: ${formattedDate}`
-    );
-    await sendMessage(
-      tgId,
       "Чтобы завершить регистрацию, необходимо подписаться на канал.",
-      CHANNEL_URL
-        ? {
-          inline_keyboard: [
-            [
-              {
-                text: "Подписаться на канал",
-                url: CHANNEL_URL
-              }
-            ]
+      {
+        inline_keyboard: [
+          [
+            {
+              text: "Подписаться на канал",
+              url: CHANNEL_URL
+            }
           ]
-        }
-        : undefined
+        ]
+      }
     );
   } catch (_error) {
     // Ignored intentionally, registration is already saved.
