@@ -68,8 +68,10 @@ module.exports = async function registerHandler(req, res) {
   }
 
   const timestampMs = Date.now();
+  const operation = hasExistingRegistration ? "edit" : "new";
   const content = [
     `tg id: ${tgId}`,
+    `operation: ${operation}`,
     `фио: ${fullName}`,
     `номер группы: ${groupNumber}`,
     `CR id: ${crId}`,

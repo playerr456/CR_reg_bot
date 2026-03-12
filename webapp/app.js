@@ -14,27 +14,58 @@ const profanityPatterns = [
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 const params = new URLSearchParams(window.location.search);
 let mode = params.get("mode") === "edit" ? "edit" : "new";
+let hasExistingRegistration = false;
+let editOnlyView = false;
 
 const form = document.getElementById("registration-form");
+const formFields = Array.from(form.querySelectorAll(".field"));
 const submitBtn = document.getElementById("submitBtn");
 const switchToEditBtn = document.getElementById("switchToEditBtn");
 const title = document.getElementById("title");
 const statusNode = document.getElementById("status");
 
+function setRegistrationFormVisibility(visible) {
+  formFields.forEach((field) => {
+    field.classList.toggle("hidden", !visible);
+  });
+  submitBtn.classList.toggle("hidden", !visible);
+}
+
 function applyMode(nextMode) {
   mode = nextMode === "edit" ? "edit" : "new";
 
-  if (mode === "edit") {
-    title.textContent = "Изменение регистрации";
-    submitBtn.textContent = "Сохранить изменения";
-  } else {
-    title.textContent = "Регистрация";
-    submitBtn.textContent = "Отправить регистрацию";
+  if (!editOnlyView) {
+    if (mode === "edit") {
+      title.textContent = "Изменение регистрации";
+      submitBtn.textContent = "Сохранить изменения";
+    } else {
+      title.textContent = "Регистрация";
+      submitBtn.textContent = "Отправить регистрацию";
+    }
   }
 
   const url = new URL(window.location.href);
   url.searchParams.set("mode", mode);
   window.history.replaceState({}, "", url.toString());
+}
+
+function enableEditOnlyView() {
+  editOnlyView = true;
+  setRegistrationFormVisibility(false);
+  title.textContent = "Вы уже зарегистрированы";
+  if (switchToEditBtn) {
+    switchToEditBtn.classList.remove("hidden");
+  }
+  setStatus("Нажмите «Изменить регистрацию».", "");
+}
+
+function disableEditOnlyView() {
+  editOnlyView = false;
+  setRegistrationFormVisibility(true);
+  if (switchToEditBtn) {
+    switchToEditBtn.classList.add("hidden");
+  }
+  applyMode(mode);
 }
 
 if (tg) {
@@ -162,8 +193,9 @@ async function loadRegistrationStatus() {
       return;
     }
 
-    if (data.hasRegistration && mode !== "edit" && switchToEditBtn) {
-      switchToEditBtn.classList.remove("hidden");
+    hasExistingRegistration = Boolean(data.hasRegistration);
+    if (hasExistingRegistration && mode !== "edit") {
+      enableEditOnlyView();
     }
   } catch (_error) {
     // Ignore status checks, the form still works.
@@ -173,7 +205,7 @@ async function loadRegistrationStatus() {
 if (switchToEditBtn) {
   switchToEditBtn.addEventListener("click", () => {
     applyMode("edit");
-    switchToEditBtn.classList.add("hidden");
+    disableEditOnlyView();
     setStatus("Режим изменения включен.", "success");
   });
 }
@@ -182,6 +214,11 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearErrors();
   setStatus("", "");
+
+  if (editOnlyView) {
+    setStatus("Нажмите «Изменить регистрацию».", "error");
+    return;
+  }
 
   if (!tg || !tg.initData) {
     setStatus("Откройте мини-приложение через Telegram.", "error");
@@ -232,10 +269,9 @@ form.addEventListener("submit", async (event) => {
     }
 
     if (data.needChange) {
-      if (switchToEditBtn) {
-        switchToEditBtn.classList.remove("hidden");
-      }
-      setStatus("Вы уже зарегистрированы. Нажмите «Изменить регистрацию».", "error");
+      hasExistingRegistration = true;
+      applyMode("new");
+      enableEditOnlyView();
       return;
     }
 
@@ -247,5 +283,11 @@ form.addEventListener("submit", async (event) => {
     submitBtn.textContent = mode === "edit" ? "Сохранить изменения" : "Отправить регистрацию";
   }
 });
+
+if (mode === "edit") {
+  disableEditOnlyView();
+} else {
+  setRegistrationFormVisibility(true);
+}
 
 loadRegistrationStatus();
