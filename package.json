@@ -1,0 +1,13 @@
+{
+  "name": "cr-reg-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "set:webhook": "node scripts/setWebhook.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^1.1.1",
+    "xlsx": "^0.18.5"
+  }
+}

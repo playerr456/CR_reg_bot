@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CR Tournament Registration</title>
+    <link rel="stylesheet" href="/webapp/styles.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script defer src="/webapp/app.js"></script>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="card">
+        <p class="kicker">Clash Royale Tournament</p>
+        <h1 id="title">Регистрация</h1>
+        <p class="subtitle">
+          Заполните форму. Проверка ФИО и группы будет выполнена по таблице `mephi_users.xlsx`.
+        </p>
+
+        <form id="registration-form" novalidate>
+          <label class="field">
+            <span>ФИО</span>
+            <input id="fullName" name="fullName" type="text" placeholder="Иванов Иван Иванович" />
+            <small class="error" data-error-for="fullName"></small>
+          </label>
+
+          <label class="field">
+            <span>Номер группы</span>
+            <input id="groupNumber" name="groupNumber" type="text" placeholder="Б20-123" />
+            <small class="error" data-error-for="groupNumber"></small>
+          </label>
+
+          <label class="field">
+            <span>CR ID</span>
+            <input id="crId" name="crId" type="text" placeholder="#2AB3C4D" />
+            <small class="error" data-error-for="crId"></small>
+          </label>
+
+          <label class="field">
+            <span>CR nickname</span>
+            <input id="crNickname" name="crNickname" type="text" placeholder="RoyalPlayer" />
+            <small class="error" data-error-for="crNickname"></small>
+          </label>
+
+          <button id="submitBtn" type="submit">Отправить регистрацию</button>
+        </form>
+
+        <p id="status" class="status"></p>
+      </section>
+    </main>
+  </body>
+</html>
