@@ -1,4 +1,11 @@
-const { CHANNEL_CHAT_ID, CHANNEL_URL, TELEGRAM_WEBHOOK_SECRET, WEBAPP_URL } = require("../lib/config");
+const {
+  CHANNEL_CHAT_ID,
+  CHANNEL_CHAT_ID_CR_CUP,
+  CHANNEL_URL,
+  CHANNEL_URL_CR_CUP,
+  TELEGRAM_WEBHOOK_SECRET,
+  WEBAPP_URL
+} = require("../lib/config");
 const { getLatestRegistration, hasRegistrationFolder } = require("../lib/blob-store");
 const { methodNotAllowed, parseJsonBody, sendJson } = require("../lib/http");
 const { answerCallbackQuery, getChatMember, sendMessage } = require("../lib/telegram");
@@ -33,8 +40,17 @@ function buildSubscribeCheckKeyboard() {
   if (CHANNEL_URL) {
     inlineKeyboard.push([
       {
-        text: "Подписаться на канал",
+        text: "Подписаться на основной канал",
         url: CHANNEL_URL
+      }
+    ]);
+  }
+
+  if (CHANNEL_URL_CR_CUP) {
+    inlineKeyboard.push([
+      {
+        text: "Подписаться на CR Cup",
+        url: CHANNEL_URL_CR_CUP
       }
     ]);
   }
@@ -98,28 +114,54 @@ async function handleStartCommand(message) {
 }
 
 async function checkSubscriptionState(userId) {
-  if (!CHANNEL_CHAT_ID) {
-    return { subscribed: true, verified: false };
+  const channels = [];
+  if (CHANNEL_CHAT_ID) {
+    channels.push({
+      chatId: CHANNEL_CHAT_ID,
+      label: "основной канал"
+    });
+  }
+  if (CHANNEL_CHAT_ID_CR_CUP) {
+    channels.push({
+      chatId: CHANNEL_CHAT_ID_CR_CUP,
+      label: "канал CR Cup"
+    });
   }
 
-  try {
-    const member = await getChatMember(CHANNEL_CHAT_ID, userId);
-    return {
-      subscribed: isSubscribedToChannel(member),
-      verified: true
-    };
-  } catch (error) {
-    const text = String(error?.message || "");
-    if (/member list is inaccessible/i.test(text)) {
-      return { subscribed: true, verified: false };
+  if (channels.length === 0) {
+    return { subscribed: true, verified: false, missingLabels: [] };
+  }
+
+  let hasVerifiedChannel = false;
+  const missingLabels = [];
+
+  for (const channel of channels) {
+    try {
+      const member = await getChatMember(channel.chatId, userId);
+      hasVerifiedChannel = true;
+      if (!isSubscribedToChannel(member)) {
+        missingLabels.push(channel.label);
+      }
+    } catch (error) {
+      const text = String(error?.message || "");
+      if (/member list is inaccessible/i.test(text)) {
+        continue;
+      }
+
+      return {
+        subscribed: false,
+        verified: hasVerifiedChannel,
+        missingLabels,
+        error: "Не удалось проверить подписку. Попробуйте еще раз."
+      };
     }
-
-    return {
-      subscribed: false,
-      verified: false,
-      error: "Не удалось проверить подписку. Попробуйте еще раз."
-    };
   }
+
+  return {
+    subscribed: missingLabels.length === 0,
+    verified: hasVerifiedChannel,
+    missingLabels
+  };
 }
 
 async function handleCheckSubscription(callbackQuery) {
@@ -139,9 +181,12 @@ async function handleCheckSubscription(callbackQuery) {
 
   if (!subscriptionState.subscribed) {
     await answerCallbackQuery(callbackQueryId, "Подписка не найдена.");
+    const missingText = subscriptionState.missingLabels && subscriptionState.missingLabels.length > 0
+      ? `Не найдена подписка на: ${subscriptionState.missingLabels.join(", ")}.`
+      : "Подписка не найдена.";
     await sendMessage(
       chatId,
-      "Сначала подпишитесь на канал, затем нажмите «Проверить подписку».",
+      `${missingText}\nСначала подпишитесь на каналы, затем нажмите «Проверить подписку».`,
       buildSubscribeCheckKeyboard()
     );
     return;

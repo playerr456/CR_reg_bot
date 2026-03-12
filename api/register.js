@@ -1,5 +1,5 @@
 const { hasRegistrationFolder, saveRegistrationFile } = require("../lib/blob-store");
-const { CHANNEL_URL } = require("../lib/config");
+const { CHANNEL_URL, CHANNEL_URL_CR_CUP } = require("../lib/config");
 const { studentExists } = require("../lib/excel");
 const { methodNotAllowed, parseJsonBody, sendJson } = require("../lib/http");
 const { sendMessage } = require("../lib/telegram");
@@ -12,8 +12,17 @@ function buildChannelSubscribeMarkup() {
   if (CHANNEL_URL) {
     inlineKeyboard.push([
       {
-        text: "Подписаться на канал",
+        text: "Подписаться на основной канал",
         url: CHANNEL_URL
+      }
+    ]);
+  }
+
+  if (CHANNEL_URL_CR_CUP) {
+    inlineKeyboard.push([
+      {
+        text: "Подписаться на CR Cup",
+        url: CHANNEL_URL_CR_CUP
       }
     ]);
   }
@@ -114,7 +123,7 @@ module.exports = async function registerHandler(req, res) {
   try {
     await sendMessage(
       tgId,
-      "Регистрация почти завершена, чтобы завершить регистрацию, необходимо подписаться на канал.",
+      "Регистрация почти завершена, чтобы завершить регистрацию, необходимо подписаться на каналы.",
       buildChannelSubscribeMarkup()
     );
   } catch (_error) {
