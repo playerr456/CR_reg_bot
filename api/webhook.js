@@ -235,6 +235,10 @@ async function handleJoinTournamentChat(callbackQuery) {
 
   if (!CHANNEL_CHAT_ID_CR_CUP) {
     await answerCallbackQuery(callbackQueryId, "Ссылка на чат турнира пока не настроена.");
+    await sendMessage(
+      chatId,
+      "Ссылка на чат турнира не настроена. Добавьте CHANNEL_URL_CR_CUP или CHANNEL_CHAT_ID_CR_CUP в Vercel env."
+    );
     return;
   }
 
@@ -243,6 +247,7 @@ async function handleJoinTournamentChat(callbackQuery) {
     const inviteLink = invite?.invite_link;
     if (!inviteLink) {
       await answerCallbackQuery(callbackQueryId, "Не удалось получить ссылку на чат турнира.");
+      await sendMessage(chatId, "Не удалось получить ссылку на чат турнира.");
       return;
     }
 
@@ -252,6 +257,10 @@ async function handleJoinTournamentChat(callbackQuery) {
     await answerCallbackQuery(
       callbackQueryId,
       "Не удалось создать ссылку. Проверьте права бота в чате турнира."
+    );
+    await sendMessage(
+      chatId,
+      "Не удалось создать ссылку. Проверьте, что бот админ в чате турнира и имеет право создавать пригласительные ссылки."
     );
   }
 }
