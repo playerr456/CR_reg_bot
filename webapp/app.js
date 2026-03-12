@@ -16,6 +16,7 @@ const params = new URLSearchParams(window.location.search);
 let mode = params.get("mode") === "edit" ? "edit" : "new";
 let hasExistingRegistration = false;
 let editOnlyView = false;
+let existingRegistration = null;
 
 const form = document.getElementById("registration-form");
 const formFields = Array.from(form.querySelectorAll(".field"));
@@ -23,6 +24,10 @@ const submitBtn = document.getElementById("submitBtn");
 const switchToEditBtn = document.getElementById("switchToEditBtn");
 const title = document.getElementById("title");
 const statusNode = document.getElementById("status");
+const fullNameInput = document.getElementById("fullName");
+const groupNumberInput = document.getElementById("groupNumber");
+const crIdInput = document.getElementById("crId");
+const crNicknameInput = document.getElementById("crNickname");
 
 function setRegistrationFormVisibility(visible) {
   formFields.forEach((field) => {
@@ -66,6 +71,25 @@ function disableEditOnlyView() {
     switchToEditBtn.classList.add("hidden");
   }
   applyMode(mode);
+}
+
+function fillFormWithRegistration(registration) {
+  if (!registration) {
+    return;
+  }
+
+  if (typeof registration.fullName === "string") {
+    fullNameInput.value = registration.fullName;
+  }
+  if (typeof registration.groupNumber === "string") {
+    groupNumberInput.value = registration.groupNumber;
+  }
+  if (typeof registration.crId === "string") {
+    crIdInput.value = registration.crId;
+  }
+  if (typeof registration.crNickname === "string") {
+    crNicknameInput.value = registration.crNickname;
+  }
 }
 
 if (tg) {
@@ -194,6 +218,11 @@ async function loadRegistrationStatus() {
     }
 
     hasExistingRegistration = Boolean(data.hasRegistration);
+    if (hasExistingRegistration && data.registration) {
+      existingRegistration = data.registration;
+      fillFormWithRegistration(existingRegistration);
+    }
+
     if (hasExistingRegistration && mode !== "edit") {
       enableEditOnlyView();
     }
@@ -206,6 +235,7 @@ if (switchToEditBtn) {
   switchToEditBtn.addEventListener("click", () => {
     applyMode("edit");
     disableEditOnlyView();
+    fillFormWithRegistration(existingRegistration);
     setStatus("Режим изменения включен.", "success");
   });
 }
@@ -226,10 +256,10 @@ form.addEventListener("submit", async (event) => {
   }
 
   const formData = {
-    fullName: document.getElementById("fullName").value,
-    groupNumber: document.getElementById("groupNumber").value,
-    crId: document.getElementById("crId").value,
-    crNickname: document.getElementById("crNickname").value
+    fullName: fullNameInput.value,
+    groupNumber: groupNumberInput.value,
+    crId: crIdInput.value,
+    crNickname: crNicknameInput.value
   };
 
   const validation = validate(formData);

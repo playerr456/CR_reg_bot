@@ -1,4 +1,4 @@
-const { hasRegistrationFolder } = require("../lib/blob-store");
+const { getLatestRegistration, hasRegistrationFolder } = require("../lib/blob-store");
 const { methodNotAllowed, parseJsonBody, sendJson } = require("../lib/http");
 const { verifyInitData } = require("../lib/webapp-auth");
 
@@ -22,9 +22,15 @@ module.exports = async function registrationStatusHandler(req, res) {
   const tgId = String(auth.user.id);
   try {
     const hasRegistration = await hasRegistrationFolder(tgId);
+    let registration = null;
+    if (hasRegistration) {
+      registration = await getLatestRegistration(tgId);
+    }
+
     return sendJson(res, 200, {
       ok: true,
-      hasRegistration
+      hasRegistration,
+      registration
     });
   } catch (error) {
     return sendJson(res, 500, {
