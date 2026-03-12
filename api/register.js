@@ -45,7 +45,7 @@ module.exports = async function registerHandler(req, res) {
   if (!existsInUsersTable) {
     return sendJson(res, 403, {
       ok: false,
-      error: "Пользователь с таким ФИО и номером группы не найден в mephi_users.xlsx."
+      error: "Пожалуйста, проверьте правильность написания ФИО и группы."
     });
   }
 
