@@ -6,3 +6,5 @@ node_modules/
 bot_token.env
 ~$*.xlsx
 mephi_users.xlsx
+.vercel
+.env*.local
